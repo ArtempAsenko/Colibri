@@ -182,6 +182,15 @@ $categories = getFilterOptions('category');
                                onclick="event.stopPropagation();">
                                 <i class="fab fa-instagram"></i> Замовити в Instagram
                             </a>
+                            <?php if (isLoggedIn()): ?>
+                                <button class="btn-add-cart" onclick="addToCart(<?php echo $product['id']; ?>)">
+        <i class="fas fa-shopping-cart"></i> Додати в кошик
+        </button>
+<?php else: ?>
+    <a href="admin/login.php" class="btn-login-cart">
+        <i class="fas fa-sign-in-alt"></i> Увійдіть, щоб додати в кошик
+    </a>
+<?php endif; ?>
                         </div>
                     </div>
                 <?php endwhile; ?>
@@ -379,6 +388,61 @@ function showNotification(message, type) {
         n.style.animation = 'slideOut 0.3s ease';
         setTimeout(() => n.remove(), 300);
     }, 3000);
+}
+function addToCart(productId) {
+    fetch('ajax/add_to_cart.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: 'product_id=' + productId + '&quantity=1'
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            showNotification('Товар додано в кошик! 🛒', 'success');
+        } else {
+            showNotification(data.message || 'Помилка', 'error');
+        }
+    });
+}
+// ===== ОНОВЛЕННЯ ЛІЧИЛЬНИКА ВПОДОБАЙОК =====
+function updateFavoritesBadge() {
+    const favs = getFavorites();
+    const badge = document.getElementById('fav-count');
+    if (badge) {
+        badge.textContent = favs.length;
+        badge.style.display = favs.length > 0 ? 'inline-block' : 'none';
+    }
+}
+
+// Викликаємо при завантаженні
+document.addEventListener('DOMContentLoaded', function() {
+    updateFavoritesBadge();
+});
+
+// Перевизначаємо toggleFavorite, щоб оновлювати лічильник
+const originalToggle = toggleFavorite;
+toggleFavorite = function(productId, button) {
+    originalToggle(productId, button);
+    setTimeout(updateFavoritesBadge, 100); // Оновлюємо після зміни
+};
+// ===== ОНОВЛЕННЯ ЛІЧИЛЬНИКА КОШИКА =====
+function updateCartBadge() {
+    // Якщо користувач залогінений — запит до сервера
+    <?php if (isLoggedIn()): ?>
+    fetch('ajax/get_cart_count.php')
+        .then(response => response.json())
+        .then(data => {
+            const badge = document.getElementById('cart-count');
+            if (badge) {
+                badge.textContent = data.count;
+                badge.style.display = data.count > 0 ? 'inline-block' : 'none';
+            }
+        });
+    <?php else: ?>
+    // Якщо не залогінений — ховаємо лічильник
+    const badge = document.getElementById('cart-count');
+    if (badge) badge.style.display = 'none';
+    <?php endif; ?>
 }
 </script>
 

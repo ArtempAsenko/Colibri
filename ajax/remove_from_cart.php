@@ -8,11 +8,10 @@ if (!isLoggedIn()) {
 }
 
 $cart_id = intval($_POST['cart_id']);
-$quantity = intval($_POST['quantity']);
 
 global $conn;
-$stmt = $conn->prepare("UPDATE cart SET quantity = ? WHERE id = ?");
-$stmt->bind_param("ii", $quantity, $cart_id);
+$stmt = $conn->prepare("DELETE FROM cart WHERE id = ?");
+$stmt->bind_param("i", $cart_id);
 $stmt->execute();
 $stmt->close();
 

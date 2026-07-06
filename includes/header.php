@@ -27,10 +27,22 @@ $is_admin = isset($_SESSION['role']) && $_SESSION['role'] === 'admin';
                     <li><a href="https://www.instagram.com/colibriua" target="_blank">
                         <i class="fab fa-instagram"></i> Instagram
                     </a></li>
+                    
+                    <!-- Вподобайки -->
                     <li>
                         <a href="favorites.php" class="nav-favorites">
                             <span class="heart-icon"><i class="fas fa-heart"></i></span>
                             <span>Вподобайки</span>
+                            <span class="fav-badge" id="fav-count" style="display: none;">0</span>
+                        </a>
+                    </li>
+                    
+                    <!-- Кошик (додано) -->
+                    <li>
+                        <a href="cart.php" class="nav-cart">
+                            <span class="cart-icon"><i class="fas fa-shopping-cart"></i></span>
+                            <span>Кошик</span>
+                            <span class="cart-badge" id="cart-count" style="display: none;">0</span>
                         </a>
                     </li>
                     
@@ -50,3 +62,58 @@ $is_admin = isset($_SESSION['role']) && $_SESSION['role'] === 'admin';
             </nav>
         </div>
     </header>
+
+    <!-- СКРИПТ ДЛЯ ЛІЧИЛЬНИКІВ (додано в header) -->
+    <script>
+    // ========== ЛІЧИЛЬНИК ВПОДОБАЙОК (localStorage) ==========
+    function getFavorites() {
+        const favs = localStorage.getItem('colibriua_favorites');
+        return favs ? JSON.parse(favs) : [];
+    }
+
+    function updateFavoritesBadge() {
+        const favs = getFavorites();
+        const badge = document.getElementById('fav-count');
+        if (badge) {
+            if (favs.length > 0) {
+                badge.textContent = favs.length;
+                badge.style.display = 'inline-block';
+            } else {
+                badge.style.display = 'none';
+            }
+        }
+    }
+
+    // Оновлюємо лічильник вподобайок при завантаженні
+    document.addEventListener('DOMContentLoaded', function() {
+        updateFavoritesBadge();
+    });
+
+    // ========== ЛІЧИЛЬНИК КОШИКА (серверний) ==========
+    function updateCartBadge() {
+        <?php if (isLoggedIn()): ?>
+        fetch('ajax/get_cart_count.php')
+            .then(response => response.json())
+            .then(data => {
+                const badge = document.getElementById('cart-count');
+                if (badge) {
+                    if (data.count > 0) {
+                        badge.textContent = data.count;
+                        badge.style.display = 'inline-block';
+                    } else {
+                        badge.style.display = 'none';
+                    }
+                }
+            })
+            .catch(err => console.error('Помилка лічильника кошика:', err));
+        <?php else: ?>
+        const badge = document.getElementById('cart-count');
+        if (badge) badge.style.display = 'none';
+        <?php endif; ?>
+    }
+
+    // Оновлюємо лічильник кошика при завантаженні
+    document.addEventListener('DOMContentLoaded', function() {
+        updateCartBadge();
+    });
+    </script>

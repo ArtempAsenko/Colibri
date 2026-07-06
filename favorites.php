@@ -80,6 +80,11 @@ function loadFavorites() {
                             <a href="${product.instagram_url || 'https://www.instagram.com/colibriua'}" target="_blank" class="btn-instagram">
                                 <i class="fab fa-instagram"></i> Замовити в Instagram
                             </a>
+                            
+                            <!-- ===== ДОДАНО КНОПКУ "ДОДАТИ В КОШИК" ===== -->
+                            <button class="btn-add-cart" onclick="addToCartFromFav(${product.id})">
+                                <i class="fas fa-shopping-cart"></i> Додати в кошик
+                            </button>
                         </div>
                     </div>
                 `;
@@ -103,6 +108,50 @@ function removeFavorite(productId) {
     favs = favs.filter(id => id !== productId);
     localStorage.setItem('colibriua_favorites', JSON.stringify(favs));
     loadFavorites();
+}
+
+// ===== ДОДАНО ФУНКЦІЮ ДЛЯ ДОДАВАННЯ В КОШИК ЗІ СТОРІНКИ ВПОДОБАЙОК =====
+function addToCartFromFav(productId) {
+    fetch('ajax/add_to_cart.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: 'product_id=' + productId + '&quantity=1'
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            showNotification('Товар додано в кошик! 🛒', 'success');
+            // Оновлюємо лічильник кошика (якщо функція є в header)
+            if (typeof updateCartBadge === 'function') {
+                updateCartBadge();
+            }
+        } else {
+            showNotification(data.message || 'Помилка', 'error');
+        }
+    });
+}
+
+// Функція сповіщення (якщо ще не визначена)
+function showNotification(message, type) {
+    const old = document.querySelector('.notification');
+    if (old) old.remove();
+    
+    const n = document.createElement('div');
+    n.className = 'notification';
+    n.textContent = message;
+    n.style.cssText = `
+        position: fixed; bottom: 20px; right: 20px;
+        background: ${type === 'success' ? '#81D8D0' : type === 'error' ? '#ff4757' : '#333'};
+        color: white; padding: 15px 25px; border-radius: 10px;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.2); z-index: 9999;
+        animation: slideIn 0.3s ease;
+    `;
+    document.body.appendChild(n);
+    
+    setTimeout(() => {
+        n.style.animation = 'slideOut 0.3s ease';
+        setTimeout(() => n.remove(), 300);
+    }, 3000);
 }
 
 document.addEventListener('DOMContentLoaded', loadFavorites);
